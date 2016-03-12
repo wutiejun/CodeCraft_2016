@@ -6,6 +6,7 @@
 #include "vector.h"
 #include "sdn.h"
 #include "file.h"
+#include "debug.h"
 
 int dbg = 0;
 CURRENT_QUERY_T current_query;
@@ -1668,6 +1669,7 @@ int test1()
     unload_topo(topo);
     return 0;
 }
+
 int test2()
 {
     int ret = 0;
@@ -1748,6 +1750,7 @@ int str_blank(char *cp)
 #define MAXLINE     768              /* size of buf for line from .ini file  */
 #define MAXFILENAME 256              /* size of buf for file name            */
 #define ONETIME_NODE_CNT 100
+
 int read_and_query(char *node_file, char *link_file, char *service_file, char *output_file)
 {
     TOPO *topo = NULL;
@@ -1766,6 +1769,7 @@ int read_and_query(char *node_file, char *link_file, char *service_file, char *o
     vector edges_vector = zebra_vector_init(10);
 
     printf("\r\n in: %s %s %s out: %s", node_file, link_file, service_file, output_file);
+    
     query.primary.pass_obj_array = zebra_vector_init(10);
     query.backup.pass_obj_array = zebra_vector_init(10);
 
@@ -1876,13 +1880,19 @@ int test3()
     read_and_query("test1/node.txt", "test1/edge6.txt", "test1/service6.txt", "test1/output6.txt");
     read_and_query("test2/node.txt", "test2/edge.txt", "test2/service.txt", "test2/output.txt");
 }
+
 int main(int argc, char *argv[])
 {
 //    show_alloc_memory();
     if (argc == 5)
+    {
+        /* 从输入的文件里读取参数 */
         read_and_query(argv[1], argv[2], argv[3], argv[4]);
+    }
     else
+    {
         test3();
+    }
     show_alloc_memory();
     return 0;
 }
