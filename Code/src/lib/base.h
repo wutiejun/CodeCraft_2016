@@ -13,7 +13,9 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
-#include <winsock2.h>
+//#include <winsock2.h>
+#define TRUE 1
+#define FALSE 0
 #if 0
 #include <pwd.h>
 #include <grp.h>
@@ -444,7 +446,9 @@ typedef unsigned char u_char ;
 typedef unsigned short u_int16_t ;
 typedef unsigned char u_int8_t ;
 typedef unsigned short  uint16_t;
-typedef unsigned int size_t;
+
+//typedef unsigned int size_t;
+
 typedef unsigned long long uint64_t;
 typedef unsigned int u_int32_t;
 typedef u_int32_t in_addr_t;
