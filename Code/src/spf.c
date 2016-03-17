@@ -8,6 +8,7 @@
 #include "sdn.h"
 
 extern CURRENT_QUERY_T current_query;
+
 int te_cost_cmp(QCCS_TE_COST *c1, QCCS_TE_COST *c2)
 {
     int ret_val = 0;
