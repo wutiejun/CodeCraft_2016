@@ -3,10 +3,11 @@
 # wu.tiejun
 
 OBJS=lib/file.o  lib/hash.o lib/linklist.o  lib/memory.o lib/memtypes.o  lib/ntlavll.o  lib/pqueue.o  lib/vector.o \
-	 line_reader.o main.o spf.o
+	 line_reader.o spf.o data.o main.o
 APP=code_craft
 
-CFLAGS=-I./lib -I./ -I./src 
+#-Werror  -Wall 
+CFLAGS=-I./lib -I./ -I./src
 LDFLAGS=-L./ 
 
 all: $(APP)

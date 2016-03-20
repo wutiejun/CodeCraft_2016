@@ -1881,7 +1881,7 @@ int test3()
     read_and_query("test2/node.txt", "test2/edge.txt", "test2/service.txt", "test2/output.txt");
 }
 
-int main(int argc, char *argv[])
+int main_ex(int argc, char *argv[])
 {
 //    show_alloc_memory();
     if (argc == 5)
