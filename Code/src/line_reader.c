@@ -1,22 +1,12 @@
-#include <stdio.h>
-#include "stdlib.h"
-#include "string.h"
+
+#include "line_reader.h"
 
 // FILE *fopen(const char *path, const char *mode);
 // char *fgets(char *s, int size, FILE *stream);
 
-typedef int (*LINE_READER_CALLBACK)(char Buffer[256], int LineNumber, void * pUserData);
-
-#define INVALID_LINE        0
-#define VALID_LINE          1
-#define LINE_BUFFER_SIZE    256
-#define EXIT_READ           1
-
-#define PUBLIC
-#define PRIVATE
 
 /* 检测当前行是否是有效的输入，非空行，第一个不是'#' */
-PRIVATE int CheckLine(char Buffer[256])
+PRIVATE int line_reader_check_valid_line(char Buffer[256])
 {
     int Strlen = 0;
     if (Buffer == NULL)
@@ -38,7 +28,7 @@ PRIVATE int CheckLine(char Buffer[256])
 }
 
 /* 对外API，提供文件的行读取机制 */
-PUBLIC int ReadFile(const char * pFilePath, LINE_READER_CALLBACK pCallBack, void * pUserData, int Falg)
+PUBLIC int line_reader_read(const char * pFilePath, LINE_READER_CALLBACK pCallBack, void * pUserData, int Falg)
 {
 	char Buffer[LINE_BUFFER_SIZE] = {0};	
    	FILE * pFile = NULL;
@@ -62,7 +52,7 @@ PUBLIC int ReadFile(const char * pFilePath, LINE_READER_CALLBACK pCallBack, void
 	while (ReadRet != EOF)
 	{
 		LineNumber ++;
-		if (CheckLine(Buffer) == INVALID_LINE)
+		if (line_reader_check_valid_line(Buffer) == INVALID_LINE)
 		{
 			continue;
 		}

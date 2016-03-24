@@ -32,6 +32,7 @@ typedef struct atg_qcte_overlap
   unsigned int number_of_common_srlgs;
 
 } ATG_QCTE_OVERLAP;
+
 typedef struct qccs_te_cost
 {
   /***************************************************************************/
@@ -61,6 +62,7 @@ typedef struct qccs_te_cost
   int *path_srlgs;
 
 } QCCS_TE_COST;
+
 typedef struct spf_path_s
 {
     struct router *from;
@@ -72,6 +74,7 @@ typedef struct spf_path_s
     AVLL_TREE srlg_tree;
 
 }SPF_PATH;
+
 typedef struct cspf_path_s
 {
     int cost;
@@ -149,6 +152,7 @@ struct spftree_s
     int time_debug_addtent_max_num;
 #endif    
 };
+
 typedef struct tag_constraints
 {
     int bandwidth;
@@ -173,10 +177,8 @@ struct hop_queue
             (unsigned int)((unsigned char *)(&((STRUCT *)0)->FIELD) - (unsigned char *)0)
 
 struct spftree_s * spftree_new ();
+
 void spftree_del (struct spftree_s *spftree);
-
-
-
 
 #define RET_OK 0
 #define RET_ERR_NO_PATH 2
@@ -184,7 +186,7 @@ void spftree_del (struct spftree_s *spftree);
 #define PASS_TYPE_ROUTER 0
 #define PASS_TYPE_LINK 1
 
-#define PASS_MAX 50    /* 必经点+必经边最多50个. */
+#define PASS_MAX 50                 /* 必经点+必经边最多50个. */
 #define PASS_R_L_MAX (PASS_MAX * 2) /* 每个额外有个type */
 #define SRLG_MAX 20
 #define SRLG_LIST_STR_MAX 100
@@ -218,7 +220,6 @@ void spftree_del (struct spftree_s *spftree);
 /*****************************************************************************/
 #define QCCS_EXCLUDE_IF_POSSIBLE 0x02
 
-
 #define QCCS_NO_EXCLUDED_RESOURCES (char)0x00
 #define QCCS_EXCLUDED_LINK (char)0x01
 #define QCCS_EXCLUDED_NODE (char)0x02
@@ -233,6 +234,7 @@ typedef struct node_s
   int id;
   int delay;
 }NODE_ID;
+
 typedef struct edge_s
 {
     int edge_index;
@@ -245,12 +247,12 @@ typedef struct edge_s
     char srlg_list_str[SRLG_LIST_STR_MAX];
 } EDGE;
 
-
 typedef struct topo_s
 {
     vector router_list;
     vector link_record_list;
 } TOPO;
+
 typedef struct service_demand
 {
     int start_id;
@@ -260,11 +262,13 @@ typedef struct service_demand
     int max_delay;
     vector pass_obj_array;
 } SERVICE_DEMAND;
+
 typedef struct query_s
 {
   SERVICE_DEMAND primary;
   SERVICE_DEMAND backup;
 } QUERY;
+
 typedef struct pass_obj
 {
   int type;
@@ -282,19 +286,20 @@ typedef struct pass_tree_node
     int cur_path_index;
     vector cspf_path_array;
 } PASS_TREENODE;
+
 typedef struct router
 {
     int id;
     int delay;
-    struct list *links; /* this router 's ADJs */
+    struct list *links;         /* this router 's ADJs */
     int exclude;
     int spf_query_num;
     int cspf_query_num;
-    int primary_pass_edge; /* 1:此节点出发有必经边 0:没有 */
-    int backup_pass_edge; /* 1:此节点出发有必经边 0:没有 */
-    struct link_record *primary_pass_link; /* 必经边 */
-    struct link_record *backup_pass_link; /* 必经边 */
-    PASS_TREENODE *pass_tnode; /* 最近一次关联的途径树节点. not good */
+    int primary_pass_edge;      /* 1:此节点出发有必经边 0:没有 */
+    int backup_pass_edge;       /* 1:此节点出发有必经边 0:没有 */
+    struct link_record *primary_pass_link;  /* 必经边 */
+    struct link_record *backup_pass_link;   /* 必经边 */
+    PASS_TREENODE *pass_tnode;              /* 最近一次关联的途径树节点. not good */
     struct link_record *must_link;
 }ROUTER;
 
@@ -311,6 +316,7 @@ typedef struct link_record
     int num_srlgs;
     int srlg_entry[SRLG_MAX];
 } LINK_RECORD;
+
 typedef struct pass_tree_s
 {
     PASS_TREENODE *top;
@@ -342,13 +348,15 @@ typedef struct srlg_exclude
   int srlg;
 
 } QCCS_SRLG_EXCLUDE;
+
 typedef struct query_constraints
 {
-  struct list *pass_router_list;
+    struct list *pass_router_list;
     int bandwidth;
     int delay;
     int hop_cnt;
 }QUERY_CONSTRAINTS;
+
 typedef struct current_query_s
 {
     int cspf_query_num;
@@ -374,5 +382,6 @@ typedef struct current_query_s
 
 
 QCCS_SRLG_EXCLUDE * qccs_add_to_srlg_exclusion_tree(int srlg, int exclusion_level, AVLL_TREE *tree);
+
 int compare_ulong(void *aa, void *bb  );
 

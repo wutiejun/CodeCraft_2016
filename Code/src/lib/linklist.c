@@ -83,7 +83,9 @@ listnode_add (struct list *list, void *val)
     list->tail = node;
 
     list->count++;
+    return;
 }
+
 /*
  * Add a node to the list first node.
  */
