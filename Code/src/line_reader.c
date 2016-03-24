@@ -48,8 +48,8 @@ PUBLIC int line_reader_read(const char * pFilePath, LINE_READER_CALLBACK pCallBa
         return 0;
     }
 
-    ReadRet = fgets(pFile, Buffer, LINE_BUFFER_SIZE - 1);
-	while (ReadRet != EOF)
+    ReadRet = fgets(Buffer, LINE_BUFFER_SIZE - 1, pFile);
+	while (ReadRet != NULL)
 	{
 		LineNumber ++;
 		if (line_reader_check_valid_line(Buffer) == INVALID_LINE)
@@ -63,7 +63,7 @@ PUBLIC int line_reader_read(const char * pFilePath, LINE_READER_CALLBACK pCallBa
         }
 
         memset(Buffer, 0, LINE_BUFFER_SIZE);
-        ReadRet = fgets(pFile, Buffer, LINE_BUFFER_SIZE - 1);
+        ReadRet = fgets(Buffer, LINE_BUFFER_SIZE - 1, pFile);
 	};
 
     close(pFile);

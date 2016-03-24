@@ -90,7 +90,7 @@ int string_split(char * pString, char Flag, char * pSubString[32], int MaxNum)
     return PtrIndex + 1;
 }
 
-Point * data_get_pint_by_id(struct list * pAllPoints, int PointID)
+Point * data_get_point_by_id(struct list * pAllPoints, int PointID)
 {
     Point * pPoint = NULL;
     Point * pTempPoint = NULL;
@@ -132,9 +132,11 @@ int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
     struct list * pAllPoint = &pTopoInfo->AllPoints;
     char * pSubString[8] = {0};
     int SubStringCount = 0;
-    Edge * pOutEdge = NULL;
+    Edge * pEdge = NULL;
     Point * pFromPoint = NULL;
     Point * pToPoint = NULL;
+
+    printf("Read line:%s", Buffer);
     
     SubStringCount = string_split(Buffer, ',', pSubString, 8);
     if (SubStringCount != VALID_EDGE_SUB_STR_NUM)
@@ -144,26 +146,31 @@ int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
     }
 
     /* 直接转数字，如果有错误的，暂时不考虑，由输入保证 */
-    pOutEdge = malloc(sizeof(Edge));
-    if (pOutEdge == NULL)
+    pEdge = malloc(sizeof(Edge));
+    if (pEdge == NULL)
     {
         return 0;
     }
-    pOutEdge->LinkID = atoi(pSubString[0]);
-    pOutEdge->SourceID = atoi(pSubString[1]);
-    pOutEdge->DesID = atoi(pSubString[2]);
-    pOutEdge->Cost = atoi(pSubString[3]);
+    pEdge->LinkID = atoi(pSubString[0]);
+    pEdge->SourceID = atoi(pSubString[1]);
+    pEdge->DesID = atoi(pSubString[2]);
+    pEdge->Cost = atoi(pSubString[3]);
 
     /* 将边添加到TOPO的边集中 */
-    listnode_add(pAllEdges, pOutEdge);
+    listnode_add(pAllEdges, pEdge);
 
-    pFromPoint = data_get_pint_by_id();
+    /* 先從所有的點中取一點 */
+    pFromPoint = data_get_point_by_id(pAllPoint, pEdge->SourceID);
+    listnode_add(&pFromPoint->OutEdgeSet, pEdge);
+
+    pToPoint = data_get_point_by_id(pAllPoint, pEdge->DesID);
+    listnode_add(&pToPoint->InEdgeSet, pEdge);
 
     return 0;
     
 }
 
-void debug_print_edge(struct list * pAllEdges)
+void debug_print_edge(struct list * pAllEdges, int ident)
 {
     struct listnode *node = NULL;
     Edge *pEdge = NULL;
@@ -176,15 +183,41 @@ void debug_print_edge(struct list * pAllEdges)
         {
             continue;
         }
-        printf("[%d]%d %d %d %d\n", index, pEdge->LinkID, pEdge->SourceID, 
+        if (ident) printf("    ");
+        printf("[E:%d]ID:%d S:%d D:%d C:%d\n", index, pEdge->LinkID, pEdge->SourceID, 
                 pEdge->DesID, pEdge->Cost);
+    }
+    return;
+}
+
+void debug_print_point(struct list * pAllPoint)
+{
+    struct listnode *node = NULL;
+    Point *pPoint = NULL;
+    int index = 0;
+    
+    for (ALL_LIST_ELEMENTS_RO(pAllPoint, node, pPoint))
+    {
+        index ++;
+        if(NULL == pPoint)
+        {
+            continue;
+        }
+        printf("[P:%d]ID:%d C:%d\n", pPoint, pPoint->PointID, pPoint->TotalCost);
+        printf("    In edges:\n");
+        debug_print_edge(&pPoint->InEdgeSet, 1);
+        printf("    Out edges:\n");        
+        debug_print_edge(&pPoint->OutEdgeSet, 1);
     }
     return;
 }
 
 void debug_print_topo(Topo * pTopoInfo)
 {
-    debug_print_edge(&pTopoInfo->AllEdges);
+    print("\r\n");
+    debug_print_edge(&pTopoInfo->AllEdges, 0);
+    debug_print_point(&pTopoInfo->AllPoints);
+    print("\r\n");
     return;
 }
 
