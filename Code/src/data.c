@@ -9,55 +9,19 @@
 
 #include "linklist.h"
 #include "line_reader.h"
+#include "data.h"
 
-#define INPUT_FILE_TOPO         "topo.csv"
-#define INPUT_FILE_COMMAND      "demand.csv"
+#define INPUT_FILE_TOPO         "../test-case/topo.csv"
+#define INPUT_FILE_COMMAND      "../test-case/demand.csv"
+#define OUTPUT_FILE_RESULT      "../test-case/result.csv"
 
-/*
-    输入的边的信息
-    LinkID,SourceID,DestinationID,Cost
-*/
-typedef struct Edge_
-{
-    int LinkID;
-    int SourceID;
-    int DesID;
-    int Cost;
-} Edge;
+#ifndef TRUE
+#define TRUE 1
+#endif
 
-/*
-    输入的命令信息
-    SourceID,DestinationID,IncludingSet
-*/
-typedef struct Demand_Path_
-{
-    int SourceID;
-    int DesID;
-    struct list IncludeSet;
-} Demand_Path;
-
-/*
-    提取出来的点信息，用于计算处理
-*/
-typedef struct Point_
-{
-    int PointID;
-    struct list InEdgeSet;
-    struct list OutEdgeSet;
-    
-    /* 节点动态数据，方便算法的实现 */
-    int TotalCost;
-
-} Point;
-
-/*
-    提取出来的图的Topo结构
-*/
-typedef struct Topo_
-{
-    struct list AllPoints;
-    struct list AllEdges;
-} Topo;
+#ifndef FALSE
+#define FALSE 0
+#endif
 
 /*
     将字符中按指定的字符分隔，会将指定的字符替换成\0
@@ -90,7 +54,42 @@ int string_split(char * pString, char Flag, char * pSubString[32], int MaxNum)
     return PtrIndex + 1;
 }
 
-Point * data_get_point_by_id(struct list * pAllPoints, int PointID)
+typedef int (* split_callback)(char * pSubString, void * pUserData);
+
+int string_foreach_split(char * pString, char Flag, split_callback call, void * pUserData)
+{
+    int StrIndex = 0;
+    int PtrIndex = 0;
+    char * pSubString = pString;
+    
+    if (pString == NULL || call == NULL)
+    {
+        return -1;
+    }
+
+    while (pString[StrIndex] != '\0')
+    {
+        if (pString[StrIndex] == Flag)
+        {
+            pString[StrIndex] = '\0';
+            call(pSubString, pUserData);
+            StrIndex ++;
+            pSubString = &pString[StrIndex];
+            continue;
+        }
+        StrIndex ++;
+    }
+
+    /* 如果最后还有一段数据，也回调一下 */
+    if (pSubString != &pString[StrIndex])
+    {
+        call(pSubString, pUserData);
+    }
+    
+    return 0;
+}
+
+Point * data_get_point_by_id(struct list * pAllPoints, int PointID, int AutoAdd)
 {
     Point * pPoint = NULL;
     Point * pTempPoint = NULL;
@@ -108,14 +107,20 @@ Point * data_get_point_by_id(struct list * pAllPoints, int PointID)
         }
     }
 
+    /* 原来的集合中没有找到点，又不自动添加，就返回NULL */
+    if (AutoAdd == 0)
+    {
+        return NULL;
+    }
+
     pPoint = malloc(sizeof(Point));
     if (pPoint == NULL)
     {
-        //error
+        //error
     }
     memset(pPoint, 0, sizeof(Point));
     pPoint->PointID = PointID;
-    pPoint->TotalCost = -1;         
+    pPoint->TotalCost = -1;
 
     /* 添加到Topo的所有点集合中 */
     listnode_add(pAllPoints, pPoint);
@@ -136,7 +141,7 @@ int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
     Point * pFromPoint = NULL;
     Point * pToPoint = NULL;
 
-    printf("Read line:%s", Buffer);
+    printf("Read edge line:%s", Buffer);
     
     SubStringCount = string_split(Buffer, ',', pSubString, 8);
     if (SubStringCount != VALID_EDGE_SUB_STR_NUM)
@@ -160,10 +165,10 @@ int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
     listnode_add(pAllEdges, pEdge);
 
     /* 先從所有的點中取一點 */
-    pFromPoint = data_get_point_by_id(pAllPoint, pEdge->SourceID);
+    pFromPoint = data_get_point_by_id(pAllPoint, pEdge->SourceID, TRUE);
     listnode_add(&pFromPoint->OutEdgeSet, pEdge);
 
-    pToPoint = data_get_point_by_id(pAllPoint, pEdge->DesID);
+    pToPoint = data_get_point_by_id(pAllPoint, pEdge->DesID, TRUE);
     listnode_add(&pToPoint->InEdgeSet, pEdge);
 
     return 0;
@@ -184,7 +189,7 @@ void debug_print_edge(struct list * pAllEdges, int ident)
             continue;
         }
         if (ident) printf("    ");
-        printf("[E:%d]ID:%d S:%d D:%d C:%d\n", index, pEdge->LinkID, pEdge->SourceID, 
+        printf("[E:%d]ID:%d Source:%d Des:%d Cost:%d\n", index, pEdge->LinkID, pEdge->SourceID, 
                 pEdge->DesID, pEdge->Cost);
     }
     return;
@@ -203,7 +208,7 @@ void debug_print_point(struct list * pAllPoint)
         {
             continue;
         }
-        printf("[P:%d]ID:%d C:%d\n", pPoint, pPoint->PointID, pPoint->TotalCost);
+        printf("[P:%x]ID:%d TotalCost:%d\n", index, pPoint->PointID, pPoint->TotalCost);
         printf("    In edges:\n");
         debug_print_edge(&pPoint->InEdgeSet, 1);
         printf("    Out edges:\n");        
@@ -212,16 +217,38 @@ void debug_print_point(struct list * pAllPoint)
     return;
 }
 
-void debug_print_topo(Topo * pTopoInfo)
+void debug_print_demand(Demand_Path * pDemand)
 {
-    print("\r\n");
-    debug_print_edge(&pTopoInfo->AllEdges, 0);
-    debug_print_point(&pTopoInfo->AllPoints);
-    print("\r\n");
+    struct listnode *node = NULL;
+    Point *pPoint = NULL;
+    int index = 0;
+
+    printf("[Demand]Source:%d Des:%d\n", pDemand->SourceID, pDemand->DesID);
+    printf("    include set:");
+    for (ALL_LIST_ELEMENTS_RO(&pDemand->IncludeSet, node, pPoint))
+    {
+        index ++;
+        if(NULL == pPoint)
+        {
+            continue;
+        }
+        printf("%d ", pPoint->PointID);
+    }
+    printf("\n");
     return;
 }
 
-void data_free_edge_for_tpo(void * pEdge)
+void debug_print_topo(Topo * pTopoInfo)
+{
+    printf("\r\n");
+    debug_print_edge(&pTopoInfo->AllEdges, 0);
+    debug_print_point(&pTopoInfo->AllPoints);
+    debug_print_demand(&pTopoInfo->Demand);
+    printf("\r\n");
+    return;
+}
+
+void data_free_for_tpo(void * pEdge)
 {
     if (pEdge != NULL)
     {
@@ -230,24 +257,85 @@ void data_free_edge_for_tpo(void * pEdge)
     return;
 }
 
-int load_edge(Topo * pTopoInfo)
+int data_read_demand_include_reader(char * pSubString, void * pUserData)
+{
+    Topo * pTopoInfo = (Topo *)pUserData;
+    Point * pPoint = NULL;
+    int PointID = -1;
+
+    //printf("read include set %s\n", pSubString);
+
+    PointID = atoi(pSubString);
+    pPoint = data_get_point_by_id(&pTopoInfo->AllPoints, PointID, 0);
+    if (pPoint == NULL)
+    {
+        printf("<ERROR>include point %d not find in the point set.\n", PointID);
+        return -1;
+    }
+     
+    listnode_add(&pTopoInfo->Demand.IncludeSet, pPoint);
+    return 0;     
+}
+
+
+int data_read_demand(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
+{
+    #define VALID_DEMAND_SUB_STR_NUM  3   /* 有效的边信息子字符串个数 */
+
+    Topo * pTopoInfo = (Topo *)pUserData;
+    Demand_Path * pDemand = &pTopoInfo->Demand;
+    char * pSubString[32] = {0};
+    int SubStringCount = 0;
+    
+    printf("Read demand line:%s", Buffer);
+
+    /* SourceID,DestinationID,IncludingSet */
+    SubStringCount = string_split(Buffer, ',', pSubString, 8);
+    if (SubStringCount != VALID_DEMAND_SUB_STR_NUM)
+    {
+        // ERROR
+        return 0;
+    }
+
+    pDemand->SourceID = atoi(pSubString[0]);
+    pDemand->DesID = atoi(pSubString[1]);
+
+    //printf("read include set:%s\n", pSubString[2]);
+    string_foreach_split(pSubString[2], '|', data_read_demand_include_reader, pTopoInfo);
+    
+    return 0;    
+    
+}
+
+int data_load_topo(Topo * pTopoInfo, const char * pTopoFile, const char * pDemandFile)
 {
     int ret = 0;
 
     /* 只有TOPO的链表上挂释放函数，其它的都只是指针，不释放 */
-    pTopoInfo->AllEdges.del = data_free_edge_for_tpo;
-    ret = line_reader_read(INPUT_FILE_TOPO, data_read_edge, pTopoInfo, NULL);
+    pTopoInfo->AllEdges.del = data_free_for_tpo;
+    pTopoInfo->AllPoints.del = data_free_for_tpo;
+    ret = line_reader_read(pTopoFile, data_read_edge, pTopoInfo, NULL);
     if (ret != 0)
     {
         // log error
     }
+
+    printf("\n");
+
+    ret = line_reader_read(pDemandFile, data_read_demand, pTopoInfo, NULL);
+    if (ret != 0)
+    {
+        // log error
+    }
+    
     return 0;
 }
+
 
 int main(int argc, char * argv[])
 {
     Topo topo = {0};
-    load_edge(&topo);
+    data_load_topo(&topo, INPUT_FILE_TOPO, INPUT_FILE_COMMAND);
     debug_print_topo(&topo);
     return 0;
 }

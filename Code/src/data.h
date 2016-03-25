@@ -1,0 +1,49 @@
+
+/*
+    输入的边的信息
+    LinkID,SourceID,DestinationID,Cost
+*/
+typedef struct Edge_
+{
+    int LinkID;
+    int SourceID;
+    int DesID;
+    int Cost;
+} Edge;
+
+/*
+    输入的命令信息
+    SourceID,DestinationID,IncludingSet
+*/
+typedef struct Demand_Path_
+{
+    int SourceID;
+    int DesID;
+    struct list IncludeSet;
+} Demand_Path;
+
+/*
+    提取出来的点信息，用于计算处理
+*/
+typedef struct Point_
+{
+    int PointID;
+    struct list InEdgeSet;
+    struct list OutEdgeSet;
+    
+    /* 节点动态数据，方便算法的实现 */
+    int TotalCost;
+
+} Point;
+
+/*
+    提取出来的图的Topo结构
+*/
+typedef struct Topo_
+{
+    struct list AllPoints;
+    struct list AllEdges;
+    Demand_Path Demand;
+} Topo;
+
+

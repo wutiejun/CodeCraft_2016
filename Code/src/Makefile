@@ -7,7 +7,7 @@ OBJS=lib/file.o  lib/hash.o lib/linklist.o  lib/memory.o lib/memtypes.o  lib/ntl
 APP=code_craft
 
 #-Werror  -Wall 
-CFLAGS=-I./lib -I./ -I./src
+CFLAGS=-g -I./lib -I./ -I./src
 LDFLAGS=-L./ 
 
 all: $(APP)
