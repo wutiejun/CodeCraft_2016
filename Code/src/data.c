@@ -10,18 +10,12 @@
 #include "linklist.h"
 #include "line_reader.h"
 #include "data.h"
+#include "arithmetic.h"
 
 #define INPUT_FILE_TOPO         "../test-case/topo.csv"
 #define INPUT_FILE_COMMAND      "../test-case/demand.csv"
 #define OUTPUT_FILE_RESULT      "../test-case/result.csv"
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
 
 /*
     将字符中按指定的字符分隔，会将指定的字符替换成\0
@@ -209,6 +203,10 @@ void debug_print_point(struct list * pAllPoint)
             continue;
         }
         printf("[P:%x]ID:%d TotalCost:%d\n", index, pPoint->PointID, pPoint->TotalCost);
+        if (pPoint->pMiniCostEdge != NULL)
+        {
+            printf("    Min out edge:%d\n", pPoint->pMiniCostEdge->LinkID);  
+        }
         printf("    In edges:\n");
         debug_print_edge(&pPoint->InEdgeSet, 1);
         printf("    Out edges:\n");        
@@ -253,6 +251,23 @@ void data_free_for_tpo(void * pEdge)
     if (pEdge != NULL)
     {
         free(pEdge);
+    }
+    return;
+}
+
+void data_reset_total_cost(Topo * pTopo)
+{
+    struct listnode *node = NULL;
+    Point *pPoint = NULL;
+    
+    for (ALL_LIST_ELEMENTS_RO(&pTopo->AllPoints, node, pPoint))
+    {
+        if(NULL == pPoint)
+        {
+            continue;
+        }
+        pPoint->pMiniCostEdge = NULL;
+        pPoint->TotalCost = -1;
     }
     return;
 }
@@ -335,7 +350,10 @@ int data_load_topo(Topo * pTopoInfo, const char * pTopoFile, const char * pDeman
 int main(int argc, char * argv[])
 {
     Topo topo = {0};
+    struct list OutPath = {0};
+    
     data_load_topo(&topo, INPUT_FILE_TOPO, INPUT_FILE_COMMAND);
+    arithmetic_dp(&topo, &OutPath);
     debug_print_topo(&topo);
     return 0;
 }

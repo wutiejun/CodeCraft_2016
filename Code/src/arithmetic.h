@@ -1,0 +1,14 @@
+#include <stdlib.h>
+#include <string.h>
+
+#include "linklist.h"
+#include "data.h"
+
+#ifndef __ARITHMEIC_H__
+#define __ARITHMEIC_H__
+
+int arithmetic_dp(Topo * pTopo, struct list * pOutPath);
+
+
+#endif
+

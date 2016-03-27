@@ -1,4 +1,15 @@
 
+#ifndef __CODE_CRAFT_DATA__
+#define __CODE_CRAFT_DATA__
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 /*
     输入的边的信息
     LinkID,SourceID,DestinationID,Cost
@@ -33,7 +44,7 @@ typedef struct Point_
     
     /* 节点动态数据，方便算法的实现 */
     int TotalCost;
-
+    Edge * pMiniCostEdge;
 } Point;
 
 /*
@@ -46,4 +57,9 @@ typedef struct Topo_
     Demand_Path Demand;
 } Topo;
 
+
+/* 重新设置Topo数据，重新计算路径 */
+void data_reset_total_cost(Topo * pTopo);
+
+#endif
 
