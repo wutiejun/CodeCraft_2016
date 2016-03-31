@@ -3,7 +3,7 @@
 # wu.tiejun
 
 OBJS=lib/file.o  lib/hash.o lib/linklist.o  lib/memory.o lib/memtypes.o  lib/ntlavll.o  lib/pqueue.o  lib/vector.o \
-	 line_reader.o spf.o data.o main.o arithmetic_dp.o
+	 line_reader.o spf.o data.o main.o arithmetic_dp.o debug.o main_ex.o arithmetic_cspf.o
 APP=code_craft
 
 #-Werror  -Wall 

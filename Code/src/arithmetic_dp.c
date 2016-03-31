@@ -1,7 +1,8 @@
 
 #include "arithmetic.h"
 
-void arithmetic_dp_cal_total_cost(Point * pCurrentPoint, struct list * pAllPoints)
+/* 先将每个节点到终点的最小开销计算出来 */
+void arithmetic_dp_cal_total_cost(Point * pCurrentPoint, vector pAllPoints)
 {
     struct listnode *node = NULL;
     Edge *pEdge = NULL;
@@ -10,7 +11,7 @@ void arithmetic_dp_cal_total_cost(Point * pCurrentPoint, struct list * pAllPoint
     
     for (ALL_LIST_ELEMENTS_RO(&pCurrentPoint->InEdgeSet, node, pEdge))
     {
-        pSourcePoint = data_get_point_by_id(pAllPoints, pEdge->SourceID, FALSE);
+        pSourcePoint = data_get_point_by_id_ex(pAllPoints, pEdge->SourceID, FALSE);
         if (pSourcePoint == NULL)
         {
             printf("Error source point not in the global points set.\n");
@@ -49,7 +50,7 @@ int arithmetic_dp(Topo * pTopo, struct list * pOutPath)
 
     Point * pEndPoint = NULL;
 
-    pEndPoint = data_get_point_by_id(&pTopo->AllPoints, pDemand->DesID, FALSE);
+    pEndPoint = data_get_point_by_id_ex(pTopo->AllPoints, pDemand->DesID, FALSE);
     if (pEndPoint == NULL)
     {
         printf("Error get end point %d for global points set.\n", pDemand->DesID);
@@ -57,7 +58,7 @@ int arithmetic_dp(Topo * pTopo, struct list * pOutPath)
     }
 
     pEndPoint->TotalCost = 0;
-    arithmetic_dp_cal_total_cost(pEndPoint, &pTopo->AllPoints);
+    arithmetic_dp_cal_total_cost(pEndPoint, pTopo->AllPoints);
     
     return 0;
 }

@@ -789,6 +789,7 @@ void node_id_vector_free(vector v)
     }
     zebra_vector_free(v);
 }
+
 TOPO * load_topo(vector vs, int v_num, vector edges, int edge_num)
 {
     int eindex;
@@ -840,6 +841,7 @@ TOPO * load_topo(vector vs, int v_num, vector edges, int edge_num)
 out:
     return topo;
 }
+
 int unload_topo(TOPO *topo)
 {
     int i = 0;
@@ -901,6 +903,7 @@ int free_path_vector(vector v)
     }
     zebra_vector_free(v);
 }
+
 int path_srlg_tree_free(AVLL_TREE *path_srlgs)
 {
     QCCS_SRLG_EXCLUDE *srlg_ptr;

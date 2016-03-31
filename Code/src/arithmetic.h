@@ -9,6 +9,8 @@
 
 int arithmetic_dp(Topo * pTopo, struct list * pOutPath);
 
+int arithmetic_cspf(Topo * pTopo, struct list * pOutPath);
+void cspf_unload_topo(TOPO *topo);
 
 #endif
 

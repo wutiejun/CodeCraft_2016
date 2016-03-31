@@ -7,14 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "linklist.h"
-#include "line_reader.h"
 #include "data.h"
+#include "line_reader.h"
 #include "arithmetic.h"
-
-#define INPUT_FILE_TOPO         "../test-case/topo.csv"
-#define INPUT_FILE_COMMAND      "../test-case/demand.csv"
-#define OUTPUT_FILE_RESULT      "../test-case/result.csv"
 
 
 /*
@@ -50,6 +45,7 @@ int string_split(char * pString, char Flag, char * pSubString[32], int MaxNum)
 
 typedef int (* split_callback)(char * pSubString, void * pUserData);
 
+/* 将一个字符串按指定字符分隔，每个分隔回调一下回调函数 */
 int string_foreach_split(char * pString, char Flag, split_callback call, void * pUserData)
 {
     int StrIndex = 0;
@@ -83,6 +79,27 @@ int string_foreach_split(char * pString, char Flag, split_callback call, void * 
     return 0;
 }
 
+/* 通过点的ID来读取点的数据，如果AutoAdd为True时，表示自动添加一个点到全局的点中 */
+Point * data_get_point_by_id_ex(vector pAllPoints, int PointID, int AutoAdd)
+{
+    Point* pPoint = (Point *)zebra_vector_lookup_ensure(pAllPoints, PointID);
+    if ((pPoint == NULL) && (AutoAdd == TRUE))
+    {
+        pPoint = malloc(sizeof(Point));
+        if (pPoint == NULL)
+        {
+            //error
+            return NULL;
+        }
+        memset(pPoint, 0, sizeof(Point));
+        pPoint->PointID = PointID;
+        pPoint->TotalCost = -1;
+        zebra_vector_set_index(pAllPoints, PointID, pPoint);
+    }
+    return pPoint;
+}
+
+#if 0
 Point * data_get_point_by_id(struct list * pAllPoints, int PointID, int AutoAdd)
 {
     Point * pPoint = NULL;
@@ -121,14 +138,17 @@ Point * data_get_point_by_id(struct list * pAllPoints, int PointID, int AutoAdd)
     
     return pPoint;
 }
+#endif
 
-/* LinkID,SourceID,DestinationID,Cost */
+/* 
+    LinkID,SourceID,DestinationID,Cost 
+    按上面的格式读取边的信息
+*/
 int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
 {
     #define VALID_EDGE_SUB_STR_NUM  4   /* 有效的边信息子字符串个数 */
+
     Topo * pTopoInfo = (Topo *)pUserData;
-    struct list * pAllEdges = &pTopoInfo->AllEdges;
-    struct list * pAllPoint = &pTopoInfo->AllPoints;
     char * pSubString[8] = {0};
     int SubStringCount = 0;
     Edge * pEdge = NULL;
@@ -148,102 +168,27 @@ int data_read_edge(char Buffer[LINE_BUFFER_SIZE], int LineNum, void * pUserData)
     pEdge = malloc(sizeof(Edge));
     if (pEdge == NULL)
     {
+        // ERROR
         return 0;
     }
+    
     pEdge->LinkID = atoi(pSubString[0]);
     pEdge->SourceID = atoi(pSubString[1]);
     pEdge->DesID = atoi(pSubString[2]);
     pEdge->Cost = atoi(pSubString[3]);
 
     /* 将边添加到TOPO的边集中 */
-    listnode_add(pAllEdges, pEdge);
+    zebra_vector_set_index(pTopoInfo->AllEdges, pEdge->LinkID, pEdge);
 
     /* 先從所有的點中取一點 */
-    pFromPoint = data_get_point_by_id(pAllPoint, pEdge->SourceID, TRUE);
+    pFromPoint = data_get_point_by_id_ex(pTopoInfo->AllPoints, pEdge->SourceID, TRUE);
     listnode_add(&pFromPoint->OutEdgeSet, pEdge);
 
-    pToPoint = data_get_point_by_id(pAllPoint, pEdge->DesID, TRUE);
+    pToPoint = data_get_point_by_id_ex(pTopoInfo->AllPoints, pEdge->DesID, TRUE);
     listnode_add(&pToPoint->InEdgeSet, pEdge);
 
     return 0;
     
-}
-
-void debug_print_edge(struct list * pAllEdges, int ident)
-{
-    struct listnode *node = NULL;
-    Edge *pEdge = NULL;
-    int index = 0;
-    
-    for (ALL_LIST_ELEMENTS_RO(pAllEdges, node, pEdge))
-    {
-        index ++;
-        if(NULL == pEdge)
-        {
-            continue;
-        }
-        if (ident) printf("    ");
-        printf("[E:%d]ID:%d Source:%d Des:%d Cost:%d\n", index, pEdge->LinkID, pEdge->SourceID, 
-                pEdge->DesID, pEdge->Cost);
-    }
-    return;
-}
-
-void debug_print_point(struct list * pAllPoint)
-{
-    struct listnode *node = NULL;
-    Point *pPoint = NULL;
-    int index = 0;
-    
-    for (ALL_LIST_ELEMENTS_RO(pAllPoint, node, pPoint))
-    {
-        index ++;
-        if(NULL == pPoint)
-        {
-            continue;
-        }
-        printf("[P:%x]ID:%d TotalCost:%d\n", index, pPoint->PointID, pPoint->TotalCost);
-        if (pPoint->pMiniCostEdge != NULL)
-        {
-            printf("    Min out edge:%d\n", pPoint->pMiniCostEdge->LinkID);  
-        }
-        printf("    In edges:\n");
-        debug_print_edge(&pPoint->InEdgeSet, 1);
-        printf("    Out edges:\n");        
-        debug_print_edge(&pPoint->OutEdgeSet, 1);
-    }
-    return;
-}
-
-void debug_print_demand(Demand_Path * pDemand)
-{
-    struct listnode *node = NULL;
-    Point *pPoint = NULL;
-    int index = 0;
-
-    printf("[Demand]Source:%d Des:%d\n", pDemand->SourceID, pDemand->DesID);
-    printf("    include set:");
-    for (ALL_LIST_ELEMENTS_RO(&pDemand->IncludeSet, node, pPoint))
-    {
-        index ++;
-        if(NULL == pPoint)
-        {
-            continue;
-        }
-        printf("%d ", pPoint->PointID);
-    }
-    printf("\n");
-    return;
-}
-
-void debug_print_topo(Topo * pTopoInfo)
-{
-    printf("\r\n");
-    debug_print_edge(&pTopoInfo->AllEdges, 0);
-    debug_print_point(&pTopoInfo->AllPoints);
-    debug_print_demand(&pTopoInfo->Demand);
-    printf("\r\n");
-    return;
 }
 
 void data_free_for_tpo(void * pEdge)
@@ -257,11 +202,14 @@ void data_free_for_tpo(void * pEdge)
 
 void data_reset_total_cost(Topo * pTopo)
 {
-    struct listnode *node = NULL;
+    //struct listnode *node = NULL;
     Point *pPoint = NULL;
-    
-    for (ALL_LIST_ELEMENTS_RO(&pTopo->AllPoints, node, pPoint))
+    int index;
+    //for (ALL_LIST_ELEMENTS_RO(&pTopo->AllPoints, node, pPoint))
+
+    for (index = 0; index < pTopo->AllPoints->alloced; index ++)
     {
+        pPoint = zebra_vector_lookup(pTopo->AllPoints ,index);
         if(NULL == pPoint)
         {
             continue;
@@ -281,7 +229,7 @@ int data_read_demand_include_reader(char * pSubString, void * pUserData)
     //printf("read include set %s\n", pSubString);
 
     PointID = atoi(pSubString);
-    pPoint = data_get_point_by_id(&pTopoInfo->AllPoints, PointID, 0);
+    pPoint = data_get_point_by_id_ex(pTopoInfo->AllPoints, PointID, FALSE);
     if (pPoint == NULL)
     {
         printf("<ERROR>include point %d not find in the point set.\n", PointID);
@@ -326,9 +274,8 @@ int data_load_topo(Topo * pTopoInfo, const char * pTopoFile, const char * pDeman
 {
     int ret = 0;
 
-    /* 只有TOPO的链表上挂释放函数，其它的都只是指针，不释放 */
-    pTopoInfo->AllEdges.del = data_free_for_tpo;
-    pTopoInfo->AllPoints.del = data_free_for_tpo;
+    pTopoInfo->AllEdges = zebra_vector_init(256);
+    pTopoInfo->AllPoints = zebra_vector_init(256);
     ret = line_reader_read(pTopoFile, data_read_edge, pTopoInfo, NULL);
     if (ret != 0)
     {
@@ -346,14 +293,50 @@ int data_load_topo(Topo * pTopoInfo, const char * pTopoFile, const char * pDeman
     return 0;
 }
 
+typedef void(* vector_free_callback)(void * pData);
 
-int main(int argc, char * argv[])
+void data_free_vector(vector v, vector_free_callback free_callback)
 {
-    Topo topo = {0};
-    struct list OutPath = {0};
-    
-    data_load_topo(&topo, INPUT_FILE_TOPO, INPUT_FILE_COMMAND);
-    arithmetic_dp(&topo, &OutPath);
-    debug_print_topo(&topo);
-    return 0;
+    int path_i = 0;
+    for (path_i = 0; path_i < v->active; path_i++)
+    {
+        void *path = zebra_vector_lookup(v, path_i);
+        if (path)
+        {
+            free_callback(path);
+            zebra_vector_unset(v, path_i);
+        }
+    }
+    zebra_vector_free(v);
+    return;
 }
+
+inline void data_free_point(void * pData)
+{
+    Point * pPoint = (Point *)pData;
+    if (pPoint->InEdgeSet.count > 0)
+    {
+        list_delete_all_node(&pPoint->InEdgeSet);
+    }
+    if (pPoint->OutEdgeSet.count > 0)
+    {
+        list_delete_all_node(&pPoint->OutEdgeSet); 
+    }
+    return;
+}
+
+inline void data_free_edge(void * pData)
+{
+    free(pData);
+    return;
+}
+
+void data_free_topo(Topo * pTopoInfo)
+{
+    data_free_vector(pTopoInfo->AllEdges, data_free_edge);
+    data_free_vector(pTopoInfo->AllPoints, data_free_point);
+    list_delete_all_node(&pTopoInfo->Demand.IncludeSet);
+    return;
+}
+
+

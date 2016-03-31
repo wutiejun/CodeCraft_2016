@@ -1,4 +1,7 @@
 
+#include "linklist.h"
+#include "vector.h"
+
 #ifndef __CODE_CRAFT_DATA__
 #define __CODE_CRAFT_DATA__
 
@@ -48,18 +51,26 @@ typedef struct Point_
 } Point;
 
 /*
-    提取出来的图的Topo结构
+    提取出来的图的Topo结构，将list修改成vector
 */
 typedef struct Topo_
 {
-    struct list AllPoints;
-    struct list AllEdges;
+    
+    //struct list AllPoints;
+    //struct list AllEdges;
+    vector AllPoints;
+    vector AllEdges;
     Demand_Path Demand;
 } Topo;
 
 
 /* 重新设置Topo数据，重新计算路径 */
 void data_reset_total_cost(Topo * pTopo);
+
+int data_load_topo(Topo * pTopoInfo, const char * pTopoFile, const char * pDemandFile);
+
+void data_free_topo(Topo * pTopoInfo);
+
 
 #endif
 
