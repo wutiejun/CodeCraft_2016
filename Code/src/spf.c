@@ -19,8 +19,8 @@ int te_cost_cmp(QCCS_TE_COST *c1, QCCS_TE_COST *c2)
         {
             return ret_val;
         }
-
     }
+    
     if (current_query.minimize_hops)
     {
         ret_val = c1->number_of_hops - c2->number_of_hops;
@@ -49,6 +49,7 @@ int te_cost_cmp(QCCS_TE_COST *c1, QCCS_TE_COST *c2)
     }
 
     return c1->total_te_metric_cost - c2->total_te_metric_cost;
+    
 }
 
 int te_cost_add(QCCS_TE_COST *new_cost, QCCS_TE_COST *old_cost, QCCS_TE_COST *delta)
@@ -62,6 +63,7 @@ int te_cost_add(QCCS_TE_COST *new_cost, QCCS_TE_COST *old_cost, QCCS_TE_COST *de
     new_cost->exclusion_overlap.number_of_common_srlgs = delta->exclusion_overlap.number_of_common_srlgs;
     return 0;
 }
+
 int te_cost_tri_cmp(QCCS_TE_COST *c1, QCCS_TE_COST *c2, QCCS_TE_COST *delta)
 {
     QCCS_TE_COST c3;
@@ -69,6 +71,7 @@ int te_cost_tri_cmp(QCCS_TE_COST *c1, QCCS_TE_COST *c2, QCCS_TE_COST *delta)
     te_cost_add(&c3, c2, delta);
     return te_cost_cmp(c1, &c3);
 }
+
 int vertex_cmp(void* node1, void* node2)
 {
     struct spf_vertex* pot_hop1 = (struct spf_vertex* )node1;
@@ -144,6 +147,7 @@ struct spf_vertex * vertex_hash_lookup(struct hash *h, struct spf_vertex * verte
     struct spf_vertex *hit = zebra_hash_lookup(h, vertex);
     return hit;
 }
+
 static void * vertex_hash_alloc (struct spf_vertex *vertex)
 {
     return vertex;
@@ -171,6 +175,7 @@ static struct spf_vertex * find_vertex (struct hash *h, void *r)
     return vertex_hit;
 
 }
+
 static struct spf_vertex * vertex_new (struct spftree_s *spftree, ROUTER *r)
 {
     struct spf_vertex *vertex;
@@ -191,6 +196,7 @@ static struct spf_vertex * vertex_new (struct spftree_s *spftree, ROUTER *r)
     vertex->parents = list_new ();
     vertex->children = list_new ();
     vertex->circuits = list_new ();
+    
     //AVLL_INIT_TREE(vertex->path_srlgs,
     //                compare_ulong,
     //               NBB_OFFSETOF(QCCS_SRLG_EXCLUDE, srlg),
@@ -198,6 +204,7 @@ static struct spf_vertex * vertex_new (struct spftree_s *spftree, ROUTER *r)
 
     return vertex;
 }
+
 static void vertex_del (struct spf_vertex *vertex)
 {
     if (vertex->path_array)
@@ -229,6 +236,7 @@ static void spf_vertex_update_stat (void *node , int position)
     /* Set the status of the vertex, when its position changes. */
     v->stat = position;
 }
+
 int pq_vertex_cmp(void* node1, void* node2)
 {
     return vertex_cmp(node1, node2);
@@ -284,7 +292,6 @@ int compare_ulong(void *aa, void *bb  )
     return(ret_val);
 
 } /* compare_ulong */
-
 
 QCCS_SRLG_EXCLUDE *qccs_find_link_srlg_in_tree(LINK_RECORD *link_record,
         AVLL_TREE *srlg_tree)
@@ -355,7 +362,6 @@ EXIT_LABEL:
 /* Operation: Check the link's SRLGs against those in the current query.     */
 /*                                                                           */
 /**PROC-**********************************************************************/
-
 void qccs_chk_link_srlg_constraints(LINK_RECORD *link_record,
                                     int *retcode
                                    )
@@ -477,6 +483,7 @@ out:
 
     return ret;
 }
+
 struct spftree_s * spftree_new ()
 {
     struct spftree_s *tree;
@@ -541,7 +548,6 @@ void spftree_del (struct spftree_s *spftree)
 /*
  * Add this IS to the root of SPT
  */
-
 static struct spf_vertex *spf_add_root (AVLL_TREE *root_srlgs, int root_srlg_num, struct spftree_s *spftree)
 {
     struct spf_vertex *vertex;
@@ -591,7 +597,9 @@ static struct spf_vertex *spf_add2tent (struct spftree_s *spftree, struct spf_ve
     // {
     //    srlg_tree_add(&vertex->path_srlgs, &dummy->path_srlgs);
     // }
-    if (parent) {
+    
+    if (parent) 
+    {
         //listnode_add (vertex_tmp->parents_link, link);
         //listnode_add (vertex_tmp->parents, parent);
         listnode_add (parent->children, dummy);
@@ -602,6 +610,7 @@ static struct spf_vertex *spf_add2tent (struct spftree_s *spftree, struct spf_ve
 
     return vertex;
 }
+
 SPF_PATH * path_new(struct spf_vertex *pvertex, ROUTER *from, ROUTER *to)
 {
     SPF_PATH *path = XCALLOC(MTYPE_PATH, sizeof(SPF_PATH));
@@ -629,11 +638,13 @@ void path_free(SPF_PATH *path)
     path_srlg_tree_free(&path->srlg_tree);
     XFREE(MTYPE_PATH, path);
 }
+
 int add_path_from_parent(struct spftree_s *spf_tree, struct spf_vertex *vertex, 
   struct spf_vertex *parent, LINK_RECORD *link, int new_common_srlgs)
 {
     int p_path_i = 0;
     int p_path_num = 0;
+    
     //printf("\r\n add path %d", vertex->r->id);
     if (!parent)
     {
@@ -643,11 +654,13 @@ int add_path_from_parent(struct spftree_s *spf_tree, struct spf_vertex *vertex,
         zebra_vector_set(vertex->path_array, path);
         return 0;
     }
+    
     if (parent->path_array == NULL)
     {
         ERR_LOG(spf_tree->root_router->id, parent->router->id, 0, 0);
         return -1;
     }
+    
     //printf("\r\n parnet %d path  count %d", parent->r->id, zebra_vector_count(parent->r_lists));
     for (p_path_i = 0; p_path_i < parent->path_array->active; p_path_i++)
     {
@@ -683,6 +696,7 @@ int add_path_from_parent(struct spftree_s *spf_tree, struct spf_vertex *vertex,
         else
           zebra_vector_set(vertex->path_array, path);
     }
+    
     if (p_path_num == 0)
     {
         SPF_PATH *path;
@@ -713,8 +727,10 @@ int add_path_from_parent(struct spftree_s *spf_tree, struct spf_vertex *vertex,
         else
           zebra_vector_set(vertex->path_array, path);
     }
+    
     return 0;
 }
+
 #if 0
 int del_path_from_parent(struct spf_vertex *vertex, struct spf_vertex *parent)
 {
@@ -750,6 +766,7 @@ int merge_path(vector target, vector add)
         }
     }
 }
+
 int merge_spf_vertex_ecmp( struct spf_vertex *vertex,
                            struct spf_vertex *parent_new,
                            struct spf_vertex *vertex_new,
@@ -769,6 +786,7 @@ int merge_spf_vertex_ecmp( struct spf_vertex *vertex,
         listnode_add (parent_new->children, vertex);
 
 }
+
 int replace_spf_vertex( struct spf_vertex *vertex, struct spf_vertex *parent_new, struct spf_vertex *vertex_new,
                         LINK_RECORD *link)
 {
@@ -795,6 +813,7 @@ int replace_spf_vertex( struct spf_vertex *vertex, struct spf_vertex *parent_new
         //listnode_delete(vertex->parents, pvertex);
         //listnode_delete(vertex->parents_link, link);
     }
+    
     //for (ALL_LIST_ELEMENTS (vertex->parents_link, pnode, pnextnode, plink))
     //{
     //    if(NULL == plink)
@@ -817,7 +836,9 @@ int replace_spf_vertex( struct spf_vertex *vertex, struct spf_vertex *parent_new
     //   listnode_add (parent->children, vertex);
     //    add_path_from_parent(spftree, vertex, parent, link);
     // }
-    if (parent_new) {
+    
+    if (parent_new) 
+    {
         listnode_add (parent_new->children, vertex_new);
     }
 
@@ -830,6 +851,7 @@ int replace_spf_vertex( struct spf_vertex *vertex, struct spf_vertex *parent_new
     vertex_del(vertex);
     return 0;
 }
+
 int best_common_srlg_num_calc(AVLL_TREE *primary_srlg_exclusion_tree,
                               struct spf_vertex *parent,
                               LINK_RECORD *this_link,
@@ -900,10 +922,10 @@ static struct spf_vertex * process_N (struct spftree_s *spftree,
         return NULL;
     }
 
-
     ret_code = check_link_usable(link);
     if (ret_code & QCCS_LINK_UNUSABLE)
         goto out;
+    
     if (ret_code & QCCS_EXCLUDED_LINK)
     {
         link_exclude_num = parent->te_cost.exclusion_overlap.number_of_common_links + 1;
@@ -912,6 +934,7 @@ static struct spf_vertex * process_N (struct spftree_s *spftree,
     {
         node_exclude_num = parent->te_cost.exclusion_overlap.number_of_common_routers + 1;
     }
+    
     if (current_query.processing_backup)
     {
         AVLL_INIT_TREE(srlg_tree,
@@ -955,7 +978,6 @@ static struct spf_vertex * process_N (struct spftree_s *spftree,
     }
 
     vertex = find_vertex (spftree->tents_hash, link->to);
-
     if (vertex)
     {
         int cmp = 0;
@@ -963,15 +985,18 @@ static struct spf_vertex * process_N (struct spftree_s *spftree,
         cmp = vertex_cmp(vertex, vertex_tmp);
         if (cmp == 0)
         {
+            /* 找到等价路径 */
             merge_spf_vertex_ecmp(vertex, parent, vertex_tmp, link);
             goto out;
         }
         else if (cmp < 0)
         {
+            /* 如果有更优路径在候选队列中，直接丢弃当前查询路径 */
             goto out;
         }
         else
         {
+            /* 如果找到更优路径，更新候选队列里的数据 */
             replace_spf_vertex(vertex, parent, vertex_tmp, link);
             vertex_tmp = NULL;
 
@@ -979,6 +1004,7 @@ static struct spf_vertex * process_N (struct spftree_s *spftree,
         }
     }
 
+    /* 如果候选路径中没有当前路径，则直接添加到候选路径中 */
     vertex = spf_add2tent (spftree, parent, link, vertex_tmp);
     vertex_tmp = NULL;
 
@@ -1001,17 +1027,18 @@ static int spf_process_link (struct spftree_s *spftree, struct spf_vertex *paren
 
     if (parent->router->must_link)
     {
+        /* 如果必经边存在，直接处理 */
         process_N(spftree, parent->router->must_link, parent);
     }
     else
     {
+        /* 遍历每条边并进行spf查询处理 */
         for (ALL_LIST_ELEMENTS_RO (parent->router->links, node, link))
         {
             if(NULL == link)
             {
                 continue;
             }
-
             process_N (spftree, link, parent);
         }
     }
@@ -1040,6 +1067,7 @@ static int spf_preload_tent (struct spftree_s *spftree,
     }
     return 0;
 }
+
 /*
  * The parent(s) for vertex is set when added to TENT list
  * now we just put the child pointer(s) in place
@@ -1113,6 +1141,7 @@ char * path_to_string(vector r_lists)
     }
     return buf;
 }
+
 #if 0
 vector build_path(struct spf_vertex *vertex )
 {
@@ -1223,6 +1252,7 @@ vector build_path(struct spf_vertex *vertex )
 
 }
 #endif
+
 int run_spf(ROUTER *source, ROUTER *destination, vector *result)
 {
     int retval = 0;
@@ -1249,6 +1279,7 @@ int run_spf(ROUTER *source, ROUTER *destination, vector *result)
 
     root_vertex = spf_add_root (spftree->root_srlg_tree, spftree->root_srlg_num, spftree);
     spftree->root_vertex = root_vertex;
+    
     retval = spf_preload_tent (spftree, root_vertex);
     if (retval != 0)
     {
@@ -1262,6 +1293,7 @@ int run_spf(ROUTER *source, ROUTER *destination, vector *result)
         goto out;
     }
     *result = NULL;
+    
     while (spftree->tents && spftree->tents->size > 0)
     {
         /* Remove from tent list and add to paths list */
@@ -1273,7 +1305,7 @@ int run_spf(ROUTER *source, ROUTER *destination, vector *result)
 
         vertex_hash_del(spftree->tents_hash, vertex);
 
-        add_to_paths (spftree, vertex);
+        add_to_paths(spftree, vertex);
 
         if (destination == vertex->router)
         {
@@ -1283,12 +1315,13 @@ int run_spf(ROUTER *source, ROUTER *destination, vector *result)
             break;
         }
 
-        spf_process_link (spftree, vertex);
+        spf_process_link(spftree, vertex);
     }
 
 out:
     return retval;
 }
+
 int spf_query_start(ROUTER *source, ROUTER *destination,
                     SPF_CONSTRAINTS *constraints,
                     vector *results)
@@ -1330,6 +1363,7 @@ int spf_query_start(ROUTER *source, ROUTER *destination,
     }
     current_query.g_spftree->root_srlg_num = constraints->root_srlg_num;
     current_query.g_spftree->root_srlg_tree = constraints->root_srlg_tree;
+    
     //run spf until all destination found in path
     run_spf(source, destination, results);
 

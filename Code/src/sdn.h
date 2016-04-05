@@ -111,12 +111,12 @@ struct spftree_s
     int query_num;
     struct router *root_router;
     struct spf_vertex *root_vertex;
-    struct list *paths;        /* the SPT */
-    struct pqueue *tents;        /* TENT */
+    struct list *paths;             /* the SPT */
+    struct pqueue *tents;           /* TENT */
     struct hash *paths_hash;
     struct hash *tents_hash;
-    int pending;            /* already scheduled */
-    unsigned int runcount;        /* number of runs since uptime */
+    int pending;                    /* already scheduled */
+    unsigned int runcount;          /* number of runs since uptime */
 
     unsigned long long run_starttime;
     int attach;
@@ -156,8 +156,8 @@ struct spftree_s
 typedef struct tag_constraints
 {
     int bandwidth;
-    struct list *exclude_adjs;
-    struct list *exclude_if_poss_adjs;
+    struct list *exclude_adjs;              /* spf算法的排除对象 */
+    struct list *exclude_if_poss_adjs;      /* 尽量排除对象 */
     int hop_cnt;
     int delay;
     struct link_record *must_link;
@@ -265,8 +265,8 @@ typedef struct service_demand
 
 typedef struct query_s
 {
-  SERVICE_DEMAND primary;
-  SERVICE_DEMAND backup;
+    SERVICE_DEMAND primary;
+    SERVICE_DEMAND backup;
 } QUERY;
 
 typedef struct pass_obj
@@ -281,7 +281,7 @@ typedef struct pass_tree_node
     struct listnode *next_pass_listnode;
     struct pass_tree_node *children;
     struct router * router;
-    int calc_path; /*true or false*/
+    int calc_path;              /*true or false*/
     QCCS_TE_COST min_cost;
     int cur_path_index;
     vector cspf_path_array;
@@ -295,8 +295,8 @@ typedef struct router
     int exclude;
     int spf_query_num;
     int cspf_query_num;
-    int primary_pass_edge;      /* 1:此节点出发有必经边 0:没有 */
-    int backup_pass_edge;       /* 1:此节点出发有必经边 0:没有 */
+    int primary_pass_edge;                  /* 1:此节点出发有必经边 0:没有 */
+    int backup_pass_edge;                   /* 1:此节点出发有必经边 0:没有 */
     struct link_record *primary_pass_link;  /* 必经边 */
     struct link_record *backup_pass_link;   /* 必经边 */
     PASS_TREENODE *pass_tnode;              /* 最近一次关联的途径树节点. not good */
@@ -351,7 +351,7 @@ typedef struct srlg_exclude
 
 typedef struct query_constraints
 {
-    struct list *pass_router_list;
+    struct list *pass_router_list;  /* 必经点列表 */
     int bandwidth;
     int delay;
     int hop_cnt;

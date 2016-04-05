@@ -45,6 +45,7 @@ ROUTER* router_get(TOPO *topo, int id)
     }
     return r;
 }
+
 ROUTER* router_lookup(TOPO *topo, int id)
 {
     return zebra_vector_lookup_ensure(topo->router_list, id);
@@ -277,8 +278,11 @@ PASS_TREENODE *pass_tree_node_new(ROUTER *router)
 
     c->parent = NULL;
     c->children = NULL;
+
+    
     c->cspf_path_array = zebra_vector_init(1);
     c->router = router;
+    
     memset(&c->min_cost, 0, sizeof(c->min_cost));
     listnode_add(current_query.pass_tree_node_list, c);
     router->pass_tnode = c;
@@ -296,12 +300,14 @@ PASS_TREENODE *pass_tree_node_free(PASS_TREENODE *c)
 
     XFREE(MTYPE_PASS_TREENODE, c);
 }
+
 PASS_TREENODE * pass_tree_add_children_node(PASS_TREENODE *pnode, PASS_TREENODE *cnode)
 {
     cnode->parent = pnode;
     pnode->children = cnode;
     return cnode;
 }
+
 PASS_TREENODE * pass_tree_add_children_new_node(PASS_TREENODE *cur_node, ROUTER *node_id)
 {
     PASS_TREENODE *new_node = pass_tree_node_new(node_id);
@@ -312,6 +318,7 @@ PASS_TREENODE * pass_tree_add_children_new_node(PASS_TREENODE *cur_node, ROUTER 
     pass_tree_add_children_node(cur_node, new_node);
     return new_node;
 }
+
 CSPF_PATH * cspf_path_new()
 {
     CSPF_PATH *cpath = XCALLOC(MTYPE_CPATH, sizeof(CSPF_PATH));
@@ -328,6 +335,7 @@ CSPF_PATH * cspf_path_new()
 
     return cpath;
 }
+
 int cspf_path_free(CSPF_PATH *cpath)
 {
     if (cpath->l_list)
@@ -336,6 +344,7 @@ int cspf_path_free(CSPF_PATH *cpath)
 
     XFREE(MTYPE_CPATH, cpath);
 }
+
 int cspf_path_vector_free(vector v)
 {
     if (v)
@@ -345,11 +354,13 @@ int cspf_path_vector_free(vector v)
     }
     return 0;
 }
+
 CSPF_PATH * cspf_init_top_path()
 {
     CSPF_PATH *cpath = cspf_path_new();
     return cpath;
 }
+
 int srlg_tree_add(AVLL_TREE *to, AVLL_TREE *from)
 {
     QCCS_SRLG_EXCLUDE *current_srlg;
@@ -365,6 +376,7 @@ int srlg_tree_add(AVLL_TREE *to, AVLL_TREE *from)
     }
     return 0;
 }
+
 int common_srlg_num_calc(AVLL_TREE *primary_srlg_exclusion_tree,
                          AVLL_TREE *parent_path_srlgs,
                          LINK_RECORD *this_link,
@@ -408,6 +420,7 @@ int common_srlg_num_calc(AVLL_TREE *primary_srlg_exclusion_tree,
     *common_srlg_num_new = new_srlg_num;
     return 0;
 }
+
 int cspf_path_update(PASS_TREENODE *pnode, PASS_TREENODE *cnode, SPF_PATH *path)
 {
     CSPF_PATH *cpath = cspf_path_new();
@@ -463,6 +476,7 @@ int cspf_path_update(PASS_TREENODE *pnode, PASS_TREENODE *cnode, SPF_PATH *path)
         current_query.delay_limit_reached = TRUE;
     }
 }
+
 int pass_tree_inherit_path(PASS_TREENODE *pnode, PASS_TREENODE *cnode, SPF_PATH *path)
 {
     int cmp;
@@ -530,6 +544,7 @@ int pass_tree_reach_childs(PASS_TREENODE *pnode, SPF_CONSTRAINTS *constraints)
     return 0;
 
 }
+
 char * links_to_string_node(struct list *link_lst)
 {
     struct listnode *node;
@@ -546,6 +561,7 @@ char * links_to_string_node(struct list *link_lst)
 
     return buf;
 }
+
 char * links_to_string_link(struct list *link_lst)
 {
     struct listnode *node;
@@ -592,6 +608,7 @@ int cspf_process_query()
         goto EXIT_LABEL;
     }
 
+    /* 初始化一个路径树，并初始化启始路由点 */
     current_query.g_pass_tree = XCALLOC(MTYPE_PASS_TREE, sizeof(PASS_TREE));
     if (!current_query.g_pass_tree)
     {
@@ -610,6 +627,8 @@ int cspf_process_query()
         ERR_LOG(0, 0, 0, 0);
         goto EXIT_LABEL;
     }
+
+    /* 每次查询一个路径，根据主备条件来选择使用哪个约束 */
     if (current_query.processing_backup)
     {
         query_constaints = &current_query.backup_constraints;
@@ -617,9 +636,9 @@ int cspf_process_query()
     else
     {
         query_constaints = &current_query.primary_constraints;
-
     }
 
+    /* 将下一个必经对象做为SPF目标进行查询 */
     current_query.g_pass_tree->top->next_pass_listnode = listhead(query_constaints->pass_router_list);
     zebra_vector_set(current_query.g_pass_tree->top->cspf_path_array, cspf_init_top_path());
     cur = current_query.g_pass_tree->top;
@@ -628,6 +647,7 @@ int cspf_process_query()
     while(cur)
     {
         if (i++>400) break;
+        
         int specified_next_link = FALSE;
         struct link_record *pass_link;
 
@@ -647,6 +667,7 @@ int cspf_process_query()
             specified_next_link = TRUE;
         }
 
+        /* 如果是必经边 */
         if (specified_next_link)
         {
             if (pass_link->to != current_query.end)
@@ -664,7 +685,9 @@ int cspf_process_query()
         }
         else
         {
+            /* 否则是必经点 */
             int child_num = 0;
+            
             /* 添加下一个必经点为孩子结点 */
             if (cur->next_pass_listnode)
             {
@@ -693,6 +716,7 @@ int cspf_process_query()
             {
                 spf_constraints.must_link = pass_link;
             }
+            
             if (g_constraints && g_constraints->exclude_if_poss_adjs)
             {
                 /*  算backup path时，尽量排除primary path的边 */
@@ -707,17 +731,21 @@ int cspf_process_query()
                 spf_constraints.root_srlg_num = cpath->srlg_num;
                 spf_constraints.root_srlg_tree = &cpath->srlg_tree;
             }
+
+            /* 开始使用spf计算分段路径 */
             ret = pass_tree_reach_childs(cur, &spf_constraints);
             if (current_query.delay_limit_reached && current_query.minimize_delay)
             {
                 ret = RET_ERR_NO_PATH;
                 goto EXIT_LABEL;
             }
+            
             if (current_query.hop_limit_reached && current_query.minimize_hops)
             {
                 ret = RET_ERR_NO_PATH;
                 goto EXIT_LABEL;
             }
+            
             if (ret == RET_ERR_NO_PATH)
             {
                 goto EXIT_LABEL;
@@ -725,14 +753,18 @@ int cspf_process_query()
         }
 
         if (newc == current_query.g_pass_tree->bot)
+        {
             break;
+        }
         cur = newc;
     }
 
-
     vector end_cspf_path_array = current_query.g_pass_tree->bot->cspf_path_array;
     if (!end_cspf_path_array)
+    {
         current_query.result.result = RET_ERR_NO_PATH;
+    }
+    
     int path_num = zebra_vector_count(end_cspf_path_array);
     if (path_num == 0)
     {
@@ -750,6 +782,7 @@ EXIT_LABEL:
     destroy_pass_tree();
     return ret;
 }
+
 int destroy_pass_tree()
 {
     if (current_query.pass_tree_node_list)
@@ -940,6 +973,8 @@ int passobj_to_netobj(TOPO *topo, vector pass_id_array, struct list *pass_router
             {
                 continue;
             }
+
+            /* 必经对象为点 */
             if (pass_obj->type == 0)
             {
                 pass_router = router_lookup(topo, pass_obj->id);
@@ -953,6 +988,7 @@ int passobj_to_netobj(TOPO *topo, vector pass_id_array, struct list *pass_router
             }
             else if (pass_obj->type == 1)
             {
+                /* 必经对象为边 */
                 LINK_RECORD *pass_link;
 
                 pass_link = link_lookup(topo, pass_obj->id);
@@ -971,7 +1007,6 @@ int passobj_to_netobj(TOPO *topo, vector pass_id_array, struct list *pass_router
 
                     pass_link->from->primary_pass_edge = 1;
                     pass_link->from->primary_pass_link = pass_link;
-
                 }
                 else
                 {
@@ -982,7 +1017,6 @@ int passobj_to_netobj(TOPO *topo, vector pass_id_array, struct list *pass_router
 
                     pass_link->from->backup_pass_edge = 1;
                     pass_link->from->backup_pass_link = pass_link;
-
                 }
 
                 pass_link->from->cspf_query_num = current_query.cspf_query_num;
@@ -1004,6 +1038,7 @@ int passobj_to_netobj(TOPO *topo, vector pass_id_array, struct list *pass_router
     }
     return 0;
 }
+
 int cspf_query_parse_constraints(TOPO *topo, QUERY_CONSTRAINTS *qc, SERVICE_DEMAND *demand, int backup)
 {
     int ret = 0;
@@ -1018,6 +1053,7 @@ int cspf_query_parse_constraints(TOPO *topo, QUERY_CONSTRAINTS *qc, SERVICE_DEMA
         return ret;
     }
 }
+
 int cspf_query_parse(TOPO *topo, QUERY *query)
 {
     int i  = 0;
@@ -1044,7 +1080,6 @@ int cspf_query_parse(TOPO *topo, QUERY *query)
         current_query.required_backup = FALSE;
     }
 
-
     current_query.start = router_lookup(topo, query->primary.start_id);
     if(NULL == current_query.start)
     {
@@ -1068,6 +1103,7 @@ int cspf_query_parse(TOPO *topo, QUERY *query)
         ERR_LOG(0, 0, 0, 0);
         return -1;
     }
+    
     AVLL_INIT_TREE(current_query.primary_srlg_exclusion_tree,
                    compare_ulong,
                    NBB_OFFSETOF(QCCS_SRLG_EXCLUDE, srlg),
